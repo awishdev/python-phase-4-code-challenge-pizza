@@ -39,7 +39,7 @@ class RestaurantById(Resource):
             # include restaurant pizzas
             return restaurant.to_dict(rules=("restaurant_pizzas",)), 200
         else:
-            return {"error": "Restaurant not found"}, 400
+            return {"error": "Restaurant not found"}, 404
     def delete(self, id):
         # delete restaurant if it exists
         restaurant = Restaurant.query.filter_by(id=id).first()
