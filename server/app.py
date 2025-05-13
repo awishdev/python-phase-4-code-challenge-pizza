@@ -25,5 +25,63 @@ def index():
     return "<h1>Code challenge</h1>"
 
 
+class Restaurants(Resource):
+    def get(self):
+        restaurants = Restaurant.query.all()
+        return [restaurant.to_dict() for restaurant in restaurants], 200
+    
+
+class RestaurantById(Resource):
+
+    def get(self, id):
+        restaurant = Restaurant.query.filter_by(id=id).first()
+        if restaurant:
+            # include restaurant pizzas
+            return restaurant.to_dict(rules=("restaurant_pizzas",)), 200
+        else:
+            return {"error": "Restaurant not found"}, 404
+    def delete(self, id):
+        restaurant = Restaurant.query.filter_by(id=id).first()
+        if restaurant:
+            db.session.delete(restaurant)
+            db.session.commit()
+            return {"message": "Restaurant deleted successfully"}, 204
+        else:
+            return {"error": "Restaurant not found"}, 404
+        
+
+class Pizzas(Resource):
+    def get(self):
+        pizzas = Pizza.query.all()
+        return [pizza.to_dict() for pizza in pizzas], 200
+    
+
+class RestaurantPizzas(Resource):
+    def post(self):
+        data = request.get_json()
+
+        restaurant = Restaurant.query.filter_by(id=data["restaurant_id"]).first()
+        pizza = Pizza.query.filter_by(id=data["pizza_id"]).first()
+        if not restaurant or not pizza:
+            return {"errors": ["validation errors"]}, 400
+        
+        if data["price"] < 1 or data["price"] > 30:
+            return {"errors": ["validation errors"]}, 400
+        
+        new_restaurant_pizza = RestaurantPizza(
+            restaurant_id=data["restaurant_id"],
+            pizza_id=data["pizza_id"],
+            price=data["price"]
+        )
+        db.session.add(new_restaurant_pizza)
+        db.session.commit()
+
+        return new_restaurant_pizza.to_dict(), 201
+    
+api.add_resource(Restaurants, "/restaurants")
+api.add_resource(RestaurantById, "/restaurants/<int:id>")
+api.add_resource(Pizzas, "/pizzas")
+api.add_resource(RestaurantPizzas, "/restaurant_pizzas")
+
 if __name__ == "__main__":
     app.run(port=5555, debug=True)
