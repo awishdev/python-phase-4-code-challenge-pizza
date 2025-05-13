@@ -39,8 +39,9 @@ class RestaurantById(Resource):
             # include restaurant pizzas
             return restaurant.to_dict(rules=("restaurant_pizzas",)), 200
         else:
-            return {"error": "Restaurant not found"}, 404
+            return {"error": "Restaurant not found"}, 400
     def delete(self, id):
+        # delete restaurant if it exists
         restaurant = Restaurant.query.filter_by(id=id).first()
         if restaurant:
             db.session.delete(restaurant)
@@ -58,6 +59,7 @@ class Pizzas(Resource):
 
 class RestaurantPizzas(Resource):
     def post(self):
+        # validate request data
         data = request.get_json()
 
         restaurant = Restaurant.query.filter_by(id=data["restaurant_id"]).first()
@@ -68,11 +70,14 @@ class RestaurantPizzas(Resource):
         if data["price"] < 1 or data["price"] > 30:
             return {"errors": ["validation errors"]}, 400
         
+        #make new RestaurantPizza
+        
         new_restaurant_pizza = RestaurantPizza(
             restaurant_id=data["restaurant_id"],
             pizza_id=data["pizza_id"],
             price=data["price"]
         )
+        # add to database
         db.session.add(new_restaurant_pizza)
         db.session.commit()
 
